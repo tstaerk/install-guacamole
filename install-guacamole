@@ -1,0 +1,5 @@
+# installs guacamole
+# install some packages without asking
+export DEBIAN_FRONTEND=noninteractive
+sudo apt update
+sudo -E apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" tomcat10 tightvncserver ubuntu-gnome-desktop xfonts-75dpi xfonts-100dpi gnome-panel gcc make libvncserver-dev libpng-dev libcairo-dev libossp-uuid-dev xfce4 xfce4-goodies dbus-x11 x11-xserver-utils
