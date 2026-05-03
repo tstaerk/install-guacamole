@@ -72,3 +72,11 @@ chmod +x .vnc/xstartup
 
 # start vncserver
 vncserver
+
+# now it should work. Let's persist it for the next reboot
+sudo sh -c 'cat >> /etc/crontab' <<EOF
+@reboot root /usr/local/sbin/guacd &
+@reboot  thorsten USER=thorsten /usr/bin/vncserver >>/tmp/vnc-startup-error 2>&1
+EOF
+
+sudo sed -i "s/thorsten/$(whoami)/g" /etc/crontab
