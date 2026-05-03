@@ -2,7 +2,7 @@
 # requires a computer with Ubuntu 24.10 and access to port 8080
 # tested on
 # Ubuntu 24.10
-# Debian BookWorm
+# Does not work on Debian BookWorm
 
 # See also https://medium.com/@thorsten_28158/linux-desktop-in-a-browser-b8abb5ab150c
 
@@ -37,6 +37,7 @@ sudo guacd
 # generate vnc password
 export vncpass=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
 echo $vncpass | vncpasswd -f > ~/.vnc/passwd
+chmod 600 ~/.vnc/passwd
 
 # create configuration for guacamole
 sudo mkdir -p /etc/guacamole
@@ -53,3 +54,21 @@ sudo sh -c 'cat > /etc/guacamole/user-mapping.xml' <<EOF
 EOF
 
 sudo sed -i "s/vncpassw/$vncpass/g" /etc/guacamole/user-mapping.xml
+
+cd
+mkdir -p .vnc
+sudo sh -c 'cat > .vnc/xstartup' <<EOF
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+[ -x /etc/vnc/xstartup ] && exec /etc/vnc/xstartup
+[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
+if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+ eval $(dbus-launch - sh-syntax - exit-with-session)
+fi
+startxfce4
+EOF
+chmod +x .vnc/xstartup
+
+# start vncserver
+vncserver
