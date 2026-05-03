@@ -1,5 +1,55 @@
-# installs guacamole
+# installs guacamole and VNC so you can control your computer via a browser
+# requires a computer with Ubuntu 24.10 and access to port 8080
+# tested on
+# Ubuntu 24.10
+# Debian BookWorm
+
+# See also https://medium.com/@thorsten_28158/linux-desktop-in-a-browser-b8abb5ab150c
+
 # install some packages without asking
 export DEBIAN_FRONTEND=noninteractive
 sudo apt update
 sudo -E apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" tomcat10 tightvncserver gcc make libvncserver-dev libpng-dev libcairo-dev libossp-uuid-dev xfce4 xfce4-goodies dbus-x11 x11-xserver-utils
+
+# install guacamole
+cd
+wget https://archive.apache.org/dist/guacamole/1.6.0/binary/guacamole-1.6.0.war
+
+# convert it from java-ee to jakarte-ee
+cd
+wget https://dlcdn.apache.org/tomcat/jakartaee-migration/v1.0.10/binaries/jakartaee-migration-1.0.10-bin.tar.gz
+tar xvf jakartaee-migration-1.0.10-bin.tar.gz
+cd jakartaee-migration-1.0.10/lib/
+sudo java -jar jakartaee-migration-1.0.10.jar ~/guacamole-1.6.0.war /var/lib/tomcat10/webapps/guacamole.war
+
+# install guacamole server
+cd
+wget https://archive.apache.org/dist/guacamole/1.6.0/source/guacamole-server-1.6.0.tar.gz
+tar xvzf guacamole-server-1.6.0.tar.gz
+cd guacamole-server-1.6.0
+./configure && make -j8 && sudo make install
+sudo ln -s /usr/local/lib/libguac.so* /lib
+sudo ln -s /usr/local/lib/libguac-client-vnc.so* /lib/
+
+# start guacamole
+sudo guacd
+
+# generate vnc password
+export vncpass=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+echo $vncpass | vncpasswd -f > ~/.vnc/passwd
+
+# create configuration for guacamole
+sudo mkdir -p /etc/guacamole
+
+sudo sh -c 'cat > /etc/guacamole/user-mapping.xml' <<EOF
+<user-mapping>
+   <authorize username="user" password="password">
+      <protocol>vnc</protocol>
+         <param name="hostname">localhost</param>
+         <param name="port">5901</param>
+         <param name="password">vncpassw</param>
+    </authorize>
+</user-mapping>
+EOF
+
+sudo sed -i "s/vncpassw/$vncpass/g" /etc/guacamole/user-mapping.xml
